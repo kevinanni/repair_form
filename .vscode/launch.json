@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        // {
+        //     "name": "Python: Streamlit App",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder}/app.py",
+        //     "console": "integratedTerminal",
+        //     "args": ["run", "${file}"],
+        //     "justMyCode": false
+        // },
+        {
+            "name": "Streamlit",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit.web.cli",
+            "env": {
+                "STREAMLIT_ENABLE_COLAB_BACKEND": "true"
+            },
+            "args": [
+                "run",
+                "${workspaceFolder}/app.py",
+                "--server.port", "667",
+                "--server.address", "127.0.0.1"
+            ]
+        }
+
+    ]
+}
+

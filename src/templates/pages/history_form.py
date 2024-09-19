@@ -2,6 +2,10 @@ import streamlit as st
 from src.business_logic.repair_items import get_matching_items
 
 
+def show_match():
+    st.session_state.match_clicked = True
+
+
 def render_history_form():
     st.header("历史修理单")
     uploaded_file = st.file_uploader("上传历史修理单pdf或csv文件", type=["pdf", "csv"])
@@ -20,39 +24,66 @@ def render_history_form():
             )  # 读取csv文件为DataFrame，使用latin1编码以避免UnicodeDecodeError
 
         # 显示历史修理单表格
-        st.dataframe(df)  # 显示DataFrame
+        # st.dataframe(df)  # 显示DataFrame
+        st.data_editor(df)  # 显示DataFrame
 
-        # 点击匹配，显示表格中每条记录匹配的语句
-        if st.button("匹配修理单项目"):
+        if 'match_clicked' not in st.session_state:
+            st.session_state.match_clicked = False
+
+        st.button('匹配修理单项目', on_click=show_match)
+
+        if st.session_state.match_clicked:
+
             match_results = []
+            select_results = []
+
             for index, row in df.iterrows():
                 input_sentence = row['维修内容']
                 matches = get_matching_items(input_sentence, top_n=3)  # 获取匹配结果
                 match_results.append((input_sentence, matches))
 
-            # 逐个显示匹配结果
             for input_sentence, matches in match_results:
                 st.write(f"输入: {input_sentence}")
-                for idx, match in enumerate(matches, start=1):
-                    st.write(f"匹配项{idx}: {match[0]} (相似度: {match[1]:.2f})")
+
+                # 在循环内部记录radio的选择
+                if f"selected_match_{input_sentence}" not in st.session_state:
+                    st.session_state[
+                        f"selected_match_{input_sentence}"] = matches[0][
+                            0]  # 默认选择第一个匹配项
+
+                selected_match = st.radio(
+                    "选择匹配项:",
+                    options=[match[0] for match in matches],
+                    index=[match[0] for match in matches].index(
+                        st.session_state[f"selected_match_{input_sentence}"]
+                    ),  # 根据session_state的选择设置默认选项
+                    key=input_sentence,  # 添加唯一的key以避免DuplicateWidgetID错误
+                    on_change=lambda input_sentence=input_sentence: st.
+                    session_state.update({
+                        f"selected_match_{input_sentence}":
+                        st.session_state[f"selected_match_{input_sentence}"]
+                    })  # 更新session_state中的选择
+                )
+
+                selected_match_index = next(
+                    idx for idx, match in enumerate(matches)
+                    if match[0] == selected_match)
+                st.write(
+                    f"选择的匹配项: {selected_match} (相似度: {matches[selected_match_index][1]:.2f})"
+                )
+
+                select_results.append((input_sentence, selected_match))
                 st.markdown("---")  # 添加分割线
 
-            # # 表格显示匹配结果
-            # results_df = pd.DataFrame(match_results, columns=["输入", "匹配项"])
-            # results_df['匹配项'] = results_df['匹配项'].apply(lambda x: ', '.join(
-            #     [f"{match[0]} (相似度: {match[1]:.2f})" for match in x]))
-            # st.write("匹配结果:")
-            # st.dataframe(results_df, use_container_width=True)
-
-            # selected_row = st.dataframe(results_df, use_container_width=True)
-            # if selected_row is not None:
-            #     selected_row_index = selected_row.index[
-            #         0] if selected_row is not None else None
-            #     if selected_row_index is not None:
-            #         st.write(f"您选择的行: {results_df.iloc[selected_row_index]}")
+            # 添加按钮以显示最终匹配结果
+            if st.button("显示最终匹配结果"):
+                # 展示匹配结果的表格
+                st.write("最终的匹配结果:")
+                results_df = pd.DataFrame(select_results,
+                                          columns=["原始内容", "匹配结果"])
+                st.dataframe(results_df)
 
 
-# def history_repair_match_page():
 #     uploaded_pdf = st.file_uploader("上传历史修理单pdf", type=["pdf"])
 #     if uploaded_pdf is not None:
 #         # 将上传的pdf文件保存到临时位置
