@@ -1,0 +1,64 @@
+@startuml
+title Adjusted Repair Order System Class Diagram
+
+package "Repair Order Template" {
+    class RepairOrderTemplate {
+        - repairItems: List<RepairItem>
+        + generateRepairOrder(ship: Ship): RepairOrder
+    }
+
+    class RepairItem {
+        - itemName: String
+        - itemUnit: String
+        - itemContent: String
+        - itemPrice: Float
+        - maxPriceLimit: Float
+        - remarks: String
+        + updateContent(content: String): void
+        + updateMaxPriceLimit(limit: Float): void
+    }
+
+    class RepairCharacteristic {
+        - characteristicId: String
+        - characteristicType: String
+        - characteristicValue: String
+    }
+
+    class RepairItemCharacteristicAssociation {
+        - repairItem: RepairItem
+        - repairCharacteristic: RepairCharacteristic
+        - specificContent: String
+        - specificMaxPriceLimit: Float
+    }
+}
+
+package "Ship" {
+    class Ship {
+        - shipType: String
+        - shipAge: String
+        - repairType: String
+        + getRepairCharacteristics(): List<RepairCharacteristic>
+    }
+}
+
+package "Repair Order" {
+    class RepairOrder {
+        - documentType: String
+        - owningUnit: String
+        - ship: Ship
+        - repairType: String
+        - enteredBy: String
+        - reviewedBy: String
+        - documentStatus: String
+        - repairItems: List<RepairItem>
+        + generateFinalOrder(): void
+    }
+}
+
+Ship --> "*" RepairCharacteristic : has characteristics
+RepairOrderTemplate --> "*" RepairItem : contains
+RepairOrder --> "*" RepairItem : contains
+RepairItemCharacteristicAssociation --> RepairItem : associates with
+RepairItemCharacteristicAssociation --> RepairCharacteristic : associates with
+
+@enduml
