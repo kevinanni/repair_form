@@ -4,6 +4,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import Numeric  # Use Numeric instead of Decimal
 from src.business_logic.data_handling import session
 
+from src.models.repair_item_matcher import RepairItemMatcher
+
 Base = declarative_base()
 
 
@@ -51,3 +53,32 @@ def get_matching_items(input_sentence, top_n=1):
     matches = similarity_model.find_most_similar(input_sentence,
                                                  top_n)  # 获取匹配结果
     return matches
+
+
+#########################
+# 这两个函数用于RepairItemMatcher
+def init_items_match():
+    # 从数据库中获取所有修理基础项目
+    items = session.query(RepairBaseItem).all()
+
+    # 使用id和item_name初始化语料库
+    corpus = [(item.id, item.item_name) for item in items]
+    model = RepairItemMatcher()  # 使用RepairItemMatcher进行初始化
+    model.load_standard_items(corpus)  # 加载标准维修项目
+    return model
+
+
+def get_items_match(input_sentences):
+    """
+    根据输入句子和数量返回匹配的修理基础项目。
+
+    Args:
+        input_sentence (str): 输入的句子。
+
+    Returns:
+        list: 匹配的修理基础项目及其相似度。
+    """
+    model = init_items_match()  # 初始化RepairItemMatcher
+    # matches = model.find_matches([input_sentence])  # 获取匹配结果
+    result = model.find_matches(input_sentences)
+    return result

@@ -1,1 +1,85 @@
- 
+# 忽略附件文件
+data/offline/AnnexesFile/
+
+# 忽略本地模型
+src/models/local/
+
+# 忽略所有的 .pyc 编译文件
+*.pyc
+
+# 忽略所有的 .pyo 编译文件
+*.pyo
+
+# 忽略所有的 .pyd 编译文件
+*.pyd
+
+# 忽略所有的 .pyc 缓存目录
+__pycache__/
+
+# 忽略所有的 .DS_Store 文件（macOS）
+.DS_Store
+
+# 忽略所有的 __pycache__ 目录（Windows）
+__pycache__/
+
+# 忽略所有的 .pytest_cache 目录
+.pytest_cache/
+
+# 忽略虚拟环境
+venv/
+.env/
+
+# 忽略 pip 缓存
+.pip-cache/
+
+# 忽略 pipenv 缓存
+.pipenv/
+
+# 忽略 Python egg-info 缓存
+*.egg-info/
+
+# 忽略 Python 调试文件
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.orig
+*.rej
+
+# 忽略 Jupyter Notebook 的检查点文件
+.ipynb_checkpoints/
+
+# 忽略 PyCharm 的文件
+.idea/
+
+# 忽略 VSCode 的文件
+.vscode/
+
+# 忽略其他IDE或编辑器的临时文件
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+*.log
+
+# 忽略其他可能不需要版本控制的文件
+*.sqlite3
+*.db
+*.lock
+*.json
+*.yaml
+*.yml
+*.xml
+*.properties
+*.csv
+*.xlsx
+*.xls
+*.txt
+*.dat
+*.tar.gz
+*.zip
+*.gz
+*.jar
+*.class
+

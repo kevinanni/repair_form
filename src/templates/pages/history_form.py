@@ -14,8 +14,17 @@ def render_history_form():
         if uploaded_file.type == "application/pdf":
             # 如果是pdf，调用tabula转换出excel
             import tabula
-            df = tabula.read_pdf(uploaded_file,
-                                 pages='all')[0]  # 读取PDF并转换为DataFrame
+            dfs = tabula.read_pdf(
+                uploaded_file,
+                #   lattice=True,
+                #   guess=True,
+                #   stream=True,
+                pages='all')  # 读取PDF并转换为DataFrame
+            if dfs:
+                df = dfs[0]  # 如果读取到数据，选择第一个DataFrame
+            else:
+                st.error("未能从PDF中读取到数据，请检查文件格式或内容。")
+                return  # 如果没有读取到数据，返回
         else:
             # 处理csv文件
             import pandas as pd
