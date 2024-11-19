@@ -1,3 +1,4 @@
+import threading
 from sentence_transformers import SentenceTransformer, InputExample, SentencesDataset, losses
 from torch.utils.data import DataLoader
 from sklearn.metrics.pairwise import cosine_similarity
@@ -110,6 +111,24 @@ class RepairItemMatcher:
         :param model_path: 模型保存的路径。
         """
         self.model = SentenceTransformer(model_path)
+
+    # 单例实例
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        """
+        使用__new__方法实现单例模式。
+        确保RepairItemMatcher只有一个实例。
+
+        Returns:
+            RepairItemMatcher: RepairItemMatcher的单例实例
+        """
+        if not cls._instance:
+            with cls._lock:
+                if not cls._instance:
+                    cls._instance = super().__new__(cls)
+        return cls._instance
 
 
 # 使用示例
