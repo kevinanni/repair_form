@@ -20,9 +20,11 @@ class RepairBaseItem(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, comment='主键')
     item_name = Column(String(255), nullable=False, comment='修理名称')
     item_order = Column(Integer, default=None, comment='序号')
-    item_require = Column(Text, comment='修理要求')
-    category_id = Column(Integer, nullable=False, comment='维修类别')
-    unit = Column(String(50), nullable=False, comment='单位')
+    item_content = Column(String(255), default=None, comment='修理要求')
+    category_id = Column(Integer, default=None, comment='维修类别')
+    unit = Column(String(50), default=None, comment='单位')
+    count = Column(Numeric(10, 2), default=None, comment='数量')
+    price = Column(Numeric(10, 2), default=None, comment='价格')
     max_price = Column(Numeric(10, 2), default=None, comment='最高限价')
     remark = Column(Text, comment='备注')
     audit_state = Column(Integer, default=0, comment='审核状态')
@@ -32,6 +34,51 @@ class RepairBaseItem(Base):
                          onupdate=func.now(),
                          comment='最后更新时间')
     update_user = Column(String(100), default=None, comment='最后更新人员')
+    @classmethod
+    def get_item(cls, item_id):
+        """查询单个基础修理项目"""
+        with get_session() as session:
+            return session.query(cls).filter_by(id=item_id, delete_state=0).first()
+
+    @classmethod 
+    def get_items(cls, **filters):
+        """查询基础修理项目列表"""
+        with get_session() as session:
+            query = session.query(cls).filter_by(delete_state=0)
+            for key, value in filters.items():
+                if hasattr(cls, key):
+                    query = query.filter(getattr(cls, key) == value)
+            return query.all()
+
+    @classmethod
+    def add_item(cls, **kwargs):
+        """添加基础修理项目"""
+        with get_session() as session:
+            item = cls(**kwargs)
+            session.add(item)
+            session.commit()
+            return item
+
+    @classmethod
+    def update_item(cls, item_id, **kwargs):
+        """更新基础修理项目"""
+        with get_session() as session:
+            item = session.query(cls).filter_by(id=item_id).first()
+            if item:
+                for key, value in kwargs.items():
+                    setattr(item, key, value)
+                session.commit()
+            return item
+
+    @classmethod
+    def delete_item(cls, item_id):
+        """删除基础修理项目(软删除)"""
+        with get_session() as session:
+            item = session.query(cls).filter_by(id=item_id).first()
+            if item:
+                item.delete_state = 1
+                session.commit()
+            return item
 
 
 class RepairItem(Base):
@@ -87,9 +134,10 @@ class RepairItem(Base):
         return item
 
     @classmethod
-    def get_item(cls, session, item_id):
+    def get_item(cls, item_id):
         """查询单个维修项目"""
-        return session.query(cls).filter_by(id=item_id, delete_state=0).first()
+        with get_session() as session:
+            return session.query(cls).filter_by(id=item_id, delete_state=0).first()
 
     @classmethod
     def get_items_by_order(cls, session, order_id):
@@ -308,7 +356,8 @@ def update_corpus_from_df(df):
                 if corpus:
                     corpus.item_name = row['item_name']
                     corpus.item_combine = row['item_combine']
-                    corpus.is_std = row['is_std']
+                    corpus.is_std = row['is_std'] if pd.notna(row['is_std']) else None
+                    corpus.std_id = row['std_id']
                     corpus.std_name = row['std_name']
                     corpus.std_combine = row['std_combine']
             session.commit()
@@ -354,6 +403,30 @@ def get_all_standard_items():
             'id': item.id,
             'item_combine': item.item_combine
         } for item in items]
+
+def get_standard_item(item_id):
+    """
+    根据item_id获取标准修理项目。
+
+    Args:
+        item_id: 标准修理项目ID
+
+    Returns:
+        dict: 包含id和item_combine的字典，如果未找到则返回None
+    """
+    with get_session() as session:
+        sql_query = text(
+            "SELECT * FROM v_repair_std WHERE std_id = :item_id"
+        )
+        item = session.execute(sql_query, {'item_id': item_id}).first()
+        return item
+        # if item:
+        #     return {
+        #         'id': item.id,
+        #         'item_combine': item.item_combine,
+        #         'item_name': item.item_name
+        #     }
+        # return None
 
 
 def insert_repair_order(order_data):

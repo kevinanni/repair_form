@@ -1,8 +1,9 @@
 import os
 import streamlit as st
 import pandas as pd
-from src.business_logic.repair_items import get_items_match, get_all_standard_items, get_corpus_for_match, update_corpus_from_df
+from src.business_logic.repair_items import get_items_match, get_all_standard_items, get_corpus_for_match, update_corpus_from_df, get_standard_item
 
+import pdb
 
 def go_prev():
     if st.session_state.current_index > 0:
@@ -19,6 +20,33 @@ def go_next(max):
     else:
         st.warning("已经是最后一条数据了！")
 
+# 写一个函数，输入df和一个集合，元素包括df的行号和对应的std_id，输出是更新是否成功
+def update_df_with_std_id(df, matches):
+    """
+    根据标准项目ID更新DataFrame中的数据
+    
+    Args:
+        df: 需要更新的DataFrame
+        matches: 包含(行号,std_id)元组的集合
+        
+    Returns:
+        bool: 更新是否成功
+    """
+    # 遍历，根据std_id，去RepairItem中获取对应的记录，取出item_name和item_combine
+    for row_idx, std_id in matches:
+        std_item = get_standard_item(std_id)
+        
+        # 没找到，就更新失败，退出
+        if not std_item:
+            return False
+            
+        # 找到了，就用取出的值更新df中对应的值
+        df.loc[row_idx, 'std_id'] = std_item.std_id
+        df.loc[row_idx, 'std_combine'] = std_item.std_combine
+        df.loc[row_idx, 'std_name'] = std_item.std_name
+    
+    # 返回成功
+    return True
 
 def render_items_match():
 
@@ -29,7 +57,7 @@ def render_items_match():
     else:
         df = st.session_state.df
 
-    st.dataframe(df, use_container_width=True)  # 显示DataFrame，宽度占满页面
+    st.dataframe(df[['item_name', 'is_std', 'std_name']], use_container_width=True)  # 显示DataFrame，宽度占满页面
 
     # 点击按钮匹配修理项
     if st.button('匹配修理项'):
@@ -37,13 +65,10 @@ def render_items_match():
         empty_mask = df['std_id'].isna()
         if empty_mask.any():
             # 只获取需要匹配的行的item_combine
-            result = get_items_match(df.loc[empty_mask, 'item_combine'])
+            results = get_items_match(df.loc[empty_mask, 'item_combine'])
             # 将匹配结果更新到对应的行
-            df.loc[empty_mask,
-                   'std_id'] = [match_id for _, match_id, _ in result]
-            df.loc[empty_mask, 'std_combine'] = [
-                match_text for _, _, match_text in result
-            ]
+            matches = set(zip(df[empty_mask].index, [match_id for _, match_id, _ in results]))
+            update_df_with_std_id(df, matches)
 
         if 'current_index' not in st.session_state or 'df' not in st.session_state:
             st.session_state.df = df  # 将DataFrame存入session
@@ -69,13 +94,14 @@ def render_items_match():
                 item['item_combine']: item['id']
                 for item in standard_items
             }
-            selected_item_id = st.selectbox(
-                "匹配的标准修理项",
+            selected_item = st.selectbox(
+                "匹配的标准修理项", 
                 options=list(item_options.keys()),
                 format_func=lambda x: x,
                 index=list(item_options.values()).index(row['std_id'])
                 if row['std_id'] else 0,
             )
+            selected_item_id = item_options[selected_item]
             st.write(f"原始项目: {row['item_combine']}")
             # 显示匹配状态
             status_map = {1: "已匹配", 0: "无法匹配", None: "未匹配"}
@@ -92,12 +118,13 @@ def render_items_match():
                     go_next(len(df))
             with col3:
                 if st.button('保存'):
-                    # 将选中的标准修理项ID回写到DataFrame中
+                    # 将选中的标准修理项ID回写到DataFrame中-kevin
                     idx = st.session_state.current_index
-                    st.session_state.df.loc[
-                        idx, ['std_id', 'std_combine', 'is_std']] = [
-                            item_options[selected_item_id], selected_item_id, 1
-                        ]
+                    
+                    # pdb.set_trace()
+                    update_df_with_std_id(st.session_state.df, [(idx, selected_item_id)])
+                    st.session_state.df.at[st.session_state.current_index,
+                                           'is_std'] = 1
                     go_next(len(df))
             with col4:
                 if st.button('找不到标准项目'):
@@ -112,9 +139,10 @@ def render_items_match():
             st.write("没有更多记录可显示。")
 
         if st.button('保存编辑结果'):
+
             # st.session_state.df.to_csv(item_file_path, encoding='gbk')
-            update_corpus_from_df(st.session_state.df)
-            st.success(f"数据已成功保存")
+            if update_corpus_from_df(st.session_state.df):
+                st.success(f"数据已成功保存")
 
         # st.dataframe(df)
         # st.write("匹配结果:")
