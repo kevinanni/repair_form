@@ -92,7 +92,7 @@ def features_process(df):
 def consumption_train(is_save=False):
 
     # 数据预处理
-    query = "SELECT * FROM AI_FEAT_SHIP_FUEL"
+    query = "SELECT * FROM ai_feat_ship_fuel"
     df_raw = pd.read_sql(query, db)
 
     # 将列名转换为小写以匹配
@@ -327,7 +327,7 @@ if __name__ == '__main__':
 
 def show_fuel_predict():
     # 预测油耗
-    query = "SELECT * FROM AI_FEAT_SHIP_FUEL"
+    query = "SELECT * FROM "
     df_raw = pd.read_sql(query, db)
     # 将列名转换为小写以匹配
     df_raw.columns = df_raw.columns.str.lower()

@@ -1,7 +1,8 @@
 import os
 import streamlit as st
 import pandas as pd
-from src.business_logic.repair_items import get_items_match, get_all_standard_items, get_corpus_for_match, update_corpus_from_df, get_standard_item
+from src.business_logic.repair_items import get_items_match, get_all_standard_items, \
+get_corpus_for_match, update_corpus_from_df, get_standard_item, export_modelscope_dataset
 
 import pdb
 
@@ -143,6 +144,17 @@ def render_items_match():
             # st.session_state.df.to_csv(item_file_path, encoding='gbk')
             if update_corpus_from_df(st.session_state.df):
                 st.success(f"数据已成功保存")
+        
+        # 添加导出数据集按钮
+        if st.button('导出到ModelScope数据集'):
+            # 设置默认导出路径
+            export_path = os.path.join(os.getcwd(), 'data/dataset/repair-form')
+            
+            # 调用导出函数
+            if export_modelscope_dataset(st.session_state.df, export_path):
+                st.success(f"数据集已成功导出到 {export_path}")
+            else:
+                st.error("导出数据集失败，请检查日志")
 
         # st.dataframe(df)
         # st.write("匹配结果:")

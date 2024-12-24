@@ -3,7 +3,10 @@ from sqlalchemy.orm import sessionmaker
 
 # Simplified database URI without unix_socket
 database_uri = 'mysql+pymysql://delta:delta001@localhost/znjw'
-db = create_engine(database_uri, pool_size=10, max_overflow=20)
+db = create_engine(database_uri, pool_size=10, max_overflow=20,
+    pool_recycle=3600,  # 1小时后回收连接
+    pool_pre_ping=True  # 启用预Ping以检测死连接
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db)
 

@@ -367,6 +367,55 @@ def update_corpus_from_df(df):
             print(f"更新语料时发生错误: {str(e)}")
             return False
 
+def export_modelscope_dataset(df, export_dir, test_size=0.2):
+    """
+    将语料数据导出为ModelScope数据集格式。
+
+    Args:
+        df (pd.DataFrame): 包含语料数据的DataFrame
+        export_dir (str): 数据集导出目录
+        test_size (float): 测试集比例，默认0.2
+
+    Returns:
+        bool: 导出是否成功
+    """
+    try:
+        # 取出is_std不为空的记录
+        df_valid = df[df['is_std'].notna()].copy()
+
+        # 映射字段
+        df_valid = df_valid.rename(columns={
+            'item_name': 'query',
+            'std_name': 'title',
+            'is_std': 'label'
+        })[['id', 'query', 'title', 'label']]
+
+        # 将label列的数值类型转换为整数再转字符串
+        # 1.0 -> 1 -> "1", 0.0 -> 0 -> "0"
+        df_valid['label'] = df_valid['label'].astype(int).astype(str)
+
+        # 随机拆分训练集和测试集
+        from sklearn.model_selection import train_test_split
+        train_df, test_df = train_test_split(df_valid, 
+                                           test_size=test_size,
+                                           random_state=42)
+
+        # 创建导出目录
+        import os
+        os.makedirs(export_dir, exist_ok=True)
+
+        # 导出训练集和测试集
+        train_df.to_csv(os.path.join(export_dir, 'train.csv'), 
+                       index=False, encoding='utf-8')
+        test_df.to_csv(os.path.join(export_dir, 'test.csv'),
+                      index=False, encoding='utf-8')
+
+        return True
+
+    except Exception as e:
+        print(f"导出数据集时发生错误: {str(e)}")
+        return False
+
 
 def get_items_match(input_sentences):
     """
