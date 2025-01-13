@@ -21,7 +21,7 @@ def main_app():
                 unsafe_allow_html=True)
 
     # 侧边栏导航
-    page = st.sidebar.selectbox("选择页面", ["修理项匹配", "语音识别", "历史修理单", "油耗预测", "测试"])
+    page = st.sidebar.selectbox("选择页面", ["修理单生成", "修理项匹配", "语音识别", "历史修理单", "油耗预测", "测试"])
 
     if page == "修理项匹配":
         from src.templates.pages.items_match import render_items_match
@@ -38,6 +38,9 @@ def main_app():
     elif page == "测试":
         from src.templates.pages.test_form import render_test_form
         render_test_form()
+    elif page == "修理单生成":
+        from src.templates.pages.create_repair_order import render_create_repair_order
+        render_create_repair_order()
 
 
 if __name__ == "__main__":

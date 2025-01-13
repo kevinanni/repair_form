@@ -24,15 +24,26 @@ class SessionContextManager:
             self.session.commit()
         self.session.close()
 
+class ConnectionContextManager:
+    def __init__(self):
+        self.connection = db.connect()
+
+    def __enter__(self):
+        return self.connection
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.connection.close()
+
 def get_session():
     return SessionContextManager()
+
+def get_connection():
+    return ConnectionContextManager()
 
 # Test the connection
 if __name__ == "__main__":
     print("start...")
     with get_session() as session:
-        print("Connection successful!")
-
-
-
-
+        print("Session connection successful!")
+    with get_connection() as conn:
+        print("Raw connection successful!")

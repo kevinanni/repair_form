@@ -1,9 +1,10 @@
+import json
 from src.models.similarity_model import SimilarityModel
 from sqlalchemy import ForeignKey, create_engine, Column, Integer, String, Text, DateTime, func, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import Numeric  # Use Numeric instead of Decimal
 from sqlalchemy.orm import relationship
-from src.business_logic.data_handling import get_session
+from src.business_logic.data_handling import get_session, get_connection
 
 from src.models.repair_item_matcher import RepairItemMatcher
 
@@ -529,6 +530,36 @@ def insert_repair_order(order_data):
             session.rollback()
             raise e
 
+def call_create_repair_order(ship_id):
+    with get_connection() as connection:
+        try:
+            # 调用存储过程
+            result = connection.execute(text(f"CALL create_repair_order(:ship_id)"), {"ship_id": ship_id})
+
+            # 获取存储过程的输出
+            # 存储过程的输出是一个结果集，可以通过fetchone()或fetchall()获取
+            output = result.fetchone()
+
+            # 如果输出是JSON字符串，解析为Python对象
+            if output and output[0]:
+                json_output = json.loads(output[0])
+                return json_output
+            else:
+                return None
+
+        except Exception as e:
+            print(f"调用存储过程时出错: {e}")
+            return None
+
+def test_call_create_repair_order():
+    ship_id = "793051"  # 替换为实际的ship_id
+    repair_order_json = call_create_repair_order(ship_id)
+
+    if repair_order_json:
+        print("生成的修理单JSON:")
+        print(json.dumps(repair_order_json, indent=4, ensure_ascii=False))
+    else:
+        print("未生成修理单或调用失败。")    
 
 def main():
     # 示例数据
@@ -569,4 +600,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_call_create_repair_order()
